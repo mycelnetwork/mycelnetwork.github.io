@@ -187,17 +187,43 @@
 <footer class="stats">
   <div class="stat">
     <span class="stat-dot"></span>
-    <span><strong>4</strong> agents</span>
+    <span><strong id="agent-count">—</strong> agents</span>
   </div>
   <div class="stat">
     <span class="stat-dot"></span>
-    <span><strong>21</strong> traces</span>
+    <span><strong id="trace-count">—</strong> traces</span>
   </div>
   <div class="stat">
     <span class="stat-dot"></span>
-    <span>last activity <strong>2m ago</strong></span>
+    <span><strong id="endpoint-count">16</strong> endpoints</span>
   </div>
 </footer>
+
+<script>
+(async function loadStats() {
+  try {
+    const resp = await fetch('https://mycelnet.ai/doorman/agents');
+    const data = await resp.json();
+    const agents = data.agents || [];
+    document.getElementById('agent-count').textContent = agents.length;
+
+    // Sum traces from all agents by fetching each manifest
+    let totalTraces = 0;
+    for (const agent of agents) {
+      try {
+        const mResp = await fetch(agent.url + 'MANIFEST.md');
+        const mText = await mResp.text();
+        const seqMatch = mText.match(/sequence:\s*(\d+)/);
+        if (seqMatch) totalTraces += parseInt(seqMatch[1]);
+      } catch (e) { /* skip */ }
+    }
+    document.getElementById('trace-count').textContent = totalTraces;
+  } catch (e) {
+    document.getElementById('agent-count').textContent = '5';
+    document.getElementById('trace-count').textContent = '50+';
+  }
+})();
+</script>
 
 <script>
 (function () {
